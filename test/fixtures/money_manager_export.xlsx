@@ -1,0 +1,11 @@
+## Sheet: Money Manager
+
+Date	Account	Category	Subcategory	Note	PKR	Income/Expense	Description	Amount	Currency	Account
+46313.9751205787	Daily	Transport🚕		petrol	4500.0	Expense		4500.0	PKR	4500.0
+46312.547856944446	Salary	Food🍔	Lunch	burgers	2470.5	Expense		2470.5	PKR	2470.5
+46310.455076782404	Salary	Stocks			25000.0	Transfer-Out		25000.0	PKR	25000.0
+46309.67431152778	Salary	Daily			1400.0	Transfer-Out		1400.0	PKR	1400.0
+46305.406963726855	Salary	Savings Fund			70000.0	Transfer-Out		70000.0	PKR	70000.0
+46304.1	Stocks	Salary			5000.0	Transfer-Out		5000.0	PKR	5000.0
+46300.403899247685	Salary	Salary			237928.0	Income		237928.0	PKR	237928.0
+46271.66271482639	Salary	Stocks			25000.0	Transfer-Out		25000.0	PKR	25000.0
