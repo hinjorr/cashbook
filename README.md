@@ -30,8 +30,10 @@ A personal finance app for Android (Flutter), modelled on Money Manager, with
 
 ## Getting the APK
 
-Every push runs the **Build APK** workflow (GitHub › Actions). Open a run and
-download the `cashbook-apk` artifact.
+Every push builds the app and publishes it as a release. On your phone, open
+<https://github.com/hinjorr/cashbook/releases/latest/download/Cashbook.apk>,
+then tap the downloaded file to install it (allow "install unknown apps" for
+your browser when asked).
 
 ## Google Drive setup (one-time)
 
