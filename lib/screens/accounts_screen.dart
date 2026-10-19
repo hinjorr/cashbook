@@ -23,7 +23,7 @@ class AccountsScreen extends StatelessWidget {
       body: Reloading<Map<int, int>>(
         load: s.db.balances,
         builder: (context, bal) {
-          var assets = 0, liabilities = 0, invested = 0;
+          var assets = 0, liabilities = 0;
           for (final a in s.accounts) {
             final b = bal[a.id] ?? 0;
             if (b >= 0) {
@@ -31,7 +31,6 @@ class AccountsScreen extends StatelessWidget {
             } else {
               liabilities += b;
             }
-            if (a.isInvestment) invested += b;
           }
           final groups = <String, List<Account>>{};
           for (final a in s.accounts) {
@@ -56,14 +55,6 @@ class AccountsScreen extends StatelessWidget {
                   head('Liabilities', liabilities, expenseColor),
                   head('Total', assets + liabilities, null),
                 ]),
-              ),
-              Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12),
-                child: ListTile(
-                  leading: const Icon(Icons.trending_up, color: investColor),
-                  title: const Text('Invested (holdings)'),
-                  trailing: Text(s.money(invested), style: const TextStyle(color: investColor, fontWeight: FontWeight.w600)),
-                ),
               ),
               for (final g in order)
                 if (groups[g] != null) ...[
@@ -184,7 +175,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     text: widget.account == null ? '' : moneyToInput(widget.account!.initialBalance),
   );
   late String _group = widget.account?.group ?? 'Bank Accounts';
-  late bool _investment = widget.account?.isInvestment ?? false;
   late bool _hidden = widget.account?.hidden ?? false;
 
   @override
@@ -205,7 +195,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     await s.db.saveAccount(base.copyWith(
       name: name,
       group: _group,
-      isInvestment: _investment,
       initialBalance: parseMoney(_initial.text) ?? 0,
       hidden: _hidden,
     ));
@@ -249,12 +238,13 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _group,
-            decoration: const InputDecoration(labelText: 'Group'),
+            decoration: const InputDecoration(
+              labelText: 'Group',
+              helperText: 'Transfers into accounts in the Investments group count as invested in Stats.',
+              helperMaxLines: 2,
+            ),
             items: [for (final g in groups) DropdownMenuItem(value: g, child: Text(g))],
-            onChanged: (v) => setState(() {
-              _group = v!;
-              if (v == 'Investments') _investment = true;
-            }),
+            onChanged: (v) => setState(() => _group = v!),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -263,13 +253,6 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
             decoration: const InputDecoration(labelText: 'Opening balance'),
           ),
           const SizedBox(height: 12),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Investment account'),
-            subtitle: const Text('Transfers into this account count as investments in Stats.'),
-            value: _investment,
-            onChanged: (v) => setState(() => _investment = v),
-          ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Hide in pickers'),

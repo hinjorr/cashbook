@@ -121,6 +121,27 @@ void main() {
     });
   });
 
+  test('upgrading from v1 moves switched-on accounts into the Investments group', () async {
+    sqfliteFfiInit();
+    final dir = await Directory.systemTemp.createTemp('cashbook');
+    final path = '${dir.path}/v1.db';
+    final v1 = await databaseFactoryFfiNoIsolate.openDatabase(path);
+    await v1.execute(
+        "CREATE TABLE accounts(id INTEGER PRIMARY KEY, name TEXT, grp TEXT, is_investment INTEGER, initial INTEGER, hidden INTEGER, sort INTEGER)");
+    await v1.insert('accounts', {'name': 'Gold', 'grp': 'Savings', 'is_investment': 1, 'initial': 0, 'hidden': 0, 'sort': 0});
+    await v1.insert('accounts', {'name': 'Cash', 'grp': 'Cash', 'is_investment': 0, 'initial': 0, 'hidden': 0, 'sort': 1});
+    await v1.setVersion(1);
+    await v1.close();
+
+    final db = await AppDatabase.open(path: path, factory: databaseFactoryFfiNoIsolate);
+    final accounts = {for (final a in await db.accounts()) a.name: a};
+    expect(accounts['Gold']!.group, 'Investments');
+    expect(accounts['Gold']!.isInvestment, isTrue);
+    expect(accounts['Cash']!.isInvestment, isFalse);
+    await db.close();
+    await dir.delete(recursive: true);
+  });
+
   test('categoryTotals rolls subcategories into parents', () {
     const food = Category(id: 1, name: 'Food', type: TxnType.expense);
     const lunch = Category(id: 2, name: 'Lunch', type: TxnType.expense, parentId: 1);

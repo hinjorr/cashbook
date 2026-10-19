@@ -30,8 +30,7 @@ const _defaultAccounts = [
   Account(name: 'Salary', group: 'Bank Accounts', sort: 1),
   Account(
     name: 'Investments',
-    group: 'Investments',
-    isInvestment: true,
+    group: investmentGroup,
     sort: 2,
   ),
 ];
@@ -48,8 +47,14 @@ class AppDatabase {
     final db = await f.openDatabase(
       dbPath,
       options: OpenDatabaseOptions(
-        version: 1,
+        version: 2,
         onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
+        onUpgrade: (db, from, _) async {
+          // v2: the Investments group replaces the per-account switch.
+          if (from < 2) {
+            await db.execute("UPDATE accounts SET grp = 'Investments' WHERE is_investment = 1");
+          }
+        },
         onCreate: (db, _) async {
           await _createSchema(db);
           await _seed(db);
@@ -302,6 +307,8 @@ class AppDatabase {
           await tx.insert(t, Map<String, Object?>.from(r as Map));
         }
       }
+      // Backups from before v2 marked investments with a switch.
+      await tx.execute("UPDATE accounts SET grp = 'Investments' WHERE is_investment = 1");
     });
   }
 

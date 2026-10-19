@@ -15,11 +15,13 @@ const accountGroups = [
   'Others',
 ];
 
+/// Accounts in this group count as investments in Stats.
+const investmentGroup = 'Investments';
+
 class Account {
   final int? id;
   final String name;
   final String group;
-  final bool isInvestment;
   final int initialBalance;
   final bool hidden;
   final int sort;
@@ -28,16 +30,17 @@ class Account {
     this.id,
     required this.name,
     this.group = 'Others',
-    this.isInvestment = false,
     this.initialBalance = 0,
     this.hidden = false,
     this.sort = 0,
   });
 
+  /// Transfers into an account in the Investments group count as invested.
+  bool get isInvestment => group == investmentGroup;
+
   Account copyWith({
     String? name,
     String? group,
-    bool? isInvestment,
     int? initialBalance,
     bool? hidden,
     int? sort,
@@ -46,7 +49,6 @@ class Account {
         id: id,
         name: name ?? this.name,
         group: group ?? this.group,
-        isInvestment: isInvestment ?? this.isInvestment,
         initialBalance: initialBalance ?? this.initialBalance,
         hidden: hidden ?? this.hidden,
         sort: sort ?? this.sort,
@@ -56,6 +58,7 @@ class Account {
         'id': id,
         'name': name,
         'grp': group,
+        // Kept for older backups; the group is what counts.
         'is_investment': isInvestment ? 1 : 0,
         'initial': initialBalance,
         'hidden': hidden ? 1 : 0,
@@ -66,7 +69,6 @@ class Account {
         id: m['id'] as int?,
         name: m['name'] as String,
         group: (m['grp'] as String?) ?? 'Others',
-        isInvestment: (m['is_investment'] as int? ?? 0) == 1,
         initialBalance: m['initial'] as int? ?? 0,
         hidden: (m['hidden'] as int? ?? 0) == 1,
         sort: m['sort'] as int? ?? 0,

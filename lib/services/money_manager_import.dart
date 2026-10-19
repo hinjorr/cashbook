@@ -288,8 +288,7 @@ Future<ImportReport> applyMoneyManagerImport(
     final inv = looksLikeInvestment(name);
     final id = await db.saveAccount(Account(
       name: name,
-      group: inv ? 'Investments' : 'Others',
-      isInvestment: inv,
+      group: inv ? investmentGroup : 'Others',
       sort: accounts.length,
     ));
     newAccounts.add(name);

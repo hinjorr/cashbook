@@ -10,6 +10,7 @@ import '../data/models.dart';
 import '../logic/period.dart';
 import '../logic/stats.dart';
 import '../widgets/common.dart';
+import '../widgets/labeled_pie.dart';
 import 'accounts_screen.dart';
 import 'category_detail_screen.dart';
 
@@ -122,15 +123,16 @@ class _CategoryStats extends StatelessWidget {
 
     return ListView(
       children: [
-        SizedBox(
-          height: 260,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: _Pie(
-              values: [for (final c in totals) c.amount],
-              labels: [for (final c in totals) c.category?.name ?? 'Uncategorized'],
-            ),
-          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 20),
+          child: LabeledPie(slices: [
+            for (var i = 0; i < totals.length; i++)
+              PieSlice(
+                totals[i].category?.name ?? 'Uncategorized',
+                totals[i].amount.toDouble(),
+                chartColors[i % chartColors.length],
+              ),
+          ]),
         ),
         const Divider(height: 1),
         for (var i = 0; i < totals.length; i++)
@@ -171,7 +173,7 @@ class _InvestmentStats extends StatelessWidget {
             const Icon(Icons.trending_up, size: 48, color: investColor),
             const SizedBox(height: 12),
             const Text(
-              'Mark the accounts you invest into (stocks, savings, funds…) as investment accounts. '
+              'Put the accounts you invest into (stocks, funds, gold…) in the Investments group. '
               'Transfers into them will then show up here as investments.',
               textAlign: TextAlign.center,
             ),
@@ -351,35 +353,6 @@ class _InvestBars extends StatelessWidget {
               ]),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Pie extends StatelessWidget {
-  const _Pie({required this.values, required this.labels});
-
-  final List<int> values;
-  final List<String> labels;
-
-  @override
-  Widget build(BuildContext context) {
-    final sum = values.fold<int>(0, (a, b) => a + b);
-    return PieChart(
-      PieChartData(
-        sectionsSpace: 1,
-        centerSpaceRadius: 0,
-        sections: [
-          for (var i = 0; i < values.length; i++)
-            PieChartSectionData(
-              value: values[i].toDouble(),
-              color: chartColors[i % chartColors.length],
-              radius: 100,
-              title: values[i] / sum >= 0.06 ? '${labels[i]}\n${(values[i] / sum * 100).toStringAsFixed(1)}%' : '',
-              titleStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black87),
-              titlePositionPercentageOffset: 0.62,
-            ),
-        ],
       ),
     );
   }

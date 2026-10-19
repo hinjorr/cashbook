@@ -48,7 +48,7 @@ void main() {
     // Accounts.
     await tester.tap(find.text('Accounts'));
     await settle();
-    expect(find.text('Invested (holdings)'), findsOneWidget);
+    expect(find.text('Investments'), findsOneWidget);
     expect(find.text('Stocks'), findsOneWidget);
 
     // More › Import screen opens.

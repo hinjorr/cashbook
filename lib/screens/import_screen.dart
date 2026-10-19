@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../data/app_state.dart';
+import '../data/models.dart';
 import '../services/money_manager_import.dart';
 import '../widgets/common.dart';
 
@@ -201,7 +202,8 @@ class _ReportView extends StatelessWidget {
           Text(w, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: expenseColor)),
         const SizedBox(height: 24),
         Text('Which accounts are investments?', style: Theme.of(context).textTheme.titleSmall),
-        const Text('Money you transfer into these accounts is counted in Stats › Invested.'),
+        const Text('These go in the Investments group; money you transfer into them is counted in Stats › Invested. '
+            'You can change an account\'s group later under Accounts.'),
         const SizedBox(height: 8),
         for (final a in s.accounts)
           SwitchListTile(
@@ -209,10 +211,7 @@ class _ReportView extends StatelessWidget {
             subtitle: Text(a.group),
             value: a.isInvestment,
             onChanged: (v) async {
-              await s.db.saveAccount(a.copyWith(
-                isInvestment: v,
-                group: v ? 'Investments' : (a.group == 'Investments' ? 'Others' : a.group),
-              ));
+              await s.db.saveAccount(a.copyWith(group: v ? investmentGroup : 'Others'));
               await s.changed();
             },
           ),
