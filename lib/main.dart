@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_print
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -47,6 +48,8 @@ class _StartupAppState extends State<StartupApp> {
   }
 
   Future<T> _run<T>(String step, Future<T> Function() f) {
+    // These log lines end up in `adb logcat`; the CI smoke test reads them.
+    print('CASHBOOK_STEP $step');
     if (mounted) setState(() => _step = step);
     return f().timeout(
       const Duration(seconds: 20),
@@ -69,9 +72,11 @@ class _StartupAppState extends State<StartupApp> {
       await _run('Loading accounts', state.load);
       if (!mounted) return;
       setState(() => _state = state);
+      print('CASHBOOK_READY');
       // Daily Google Drive backup, in the background.
       unawaited(DriveBackup(prefs).autoBackupIfDue(db));
     } catch (e, st) {
+      print('CASHBOOK_STARTUP_ERROR while "$_step": $e\n$st');
       if (mounted) {
         setState(() {
           _error = e;

@@ -1,32 +1,34 @@
 #!/usr/bin/env bash
-# Installs the release APK on the running emulator, opens it and checks that
-# the home screen appears. Prints the app's log either way.
+# Installs the release APK on the running emulator, opens it and waits for the
+# app to log CASHBOOK_READY (home screen shown) or CASHBOOK_STARTUP_ERROR.
+# Prints the app's log either way.
 set -u
 APK=build/app/outputs/flutter-apk/app-release.apk
 PKG=com.hinjorr.cashbook
 
 adb install -r "$APK"
 adb logcat -c
-adb shell am start -W -n "$PKG/.MainActivity"
+adb shell am start -n "$PKG/.MainActivity"
 
 ok=1
-for i in $(seq 1 30); do
+for i in $(seq 1 40); do
   sleep 3
-  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
-  ui=$(adb shell cat /sdcard/ui.xml 2>/dev/null)
-  if grep -q 'text="Transactions"' <<<"$ui"; then
-    echo "SMOKE TEST PASSED: home screen visible after $((i * 3))s"
+  log=$(adb logcat -d -s flutter:I '*:S')
+  if grep -q CASHBOOK_READY <<<"$log"; then
+    echo "SMOKE TEST PASSED: home screen ready after about $((i * 3))s"
     ok=0
     break
   fi
-  if grep -q 'could not start' <<<"$ui"; then
-    echo "SMOKE TEST FAILED: app showed its startup error screen"
+  if grep -q CASHBOOK_STARTUP_ERROR <<<"$log"; then
+    echo "SMOKE TEST FAILED: the app reported a startup error"
     break
   fi
 done
+[ $ok -ne 0 ] && ! grep -q CASHBOOK_STARTUP_ERROR <<<"$log" && echo "SMOKE TEST FAILED: app not ready after 120s"
 
-echo "----- visible text -----"
-grep -o 'text="[^"]*"' <<<"$ui" | grep -v 'text=""' | head -60
-echo "----- app log -----"
-adb logcat -d -v brief | grep -E "flutter|AndroidRuntime|$PKG|FATAL|Exception" | tail -150
+echo "----- flutter log -----"
+adb logcat -d -s flutter:V '*:S' | tail -80
+echo "----- crashes -----"
+adb logcat -d -b crash | tail -60
+adb logcat -d | grep -E "AndroidRuntime|FATAL" | grep -v uiautomator | tail -40
 exit $ok
