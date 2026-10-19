@@ -52,7 +52,10 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Code shrinking is off: JNI-based plugins (shared_preferences_android)
+            // call Kotlin code by name, and R8 strips it, which crashes startup.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
