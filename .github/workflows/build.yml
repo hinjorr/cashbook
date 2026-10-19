@@ -62,7 +62,14 @@ jobs:
         run: |
           APKSIGNER=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)apksigner
           $APKSIGNER verify --print-certs build/app/outputs/flutter-apk/app-release.apk | grep -E "SHA-1|DN:"
-          if [ -n "$CLIENT_ID" ]; then echo "Google client ID: set (ends ...${CLIENT_ID: -30})"; else echo "Google client ID: NOT SET"; fi
+          # Never print any part of the value: the build log is public.
+          if [ -z "$CLIENT_ID" ]; then
+            echo "Google client ID: NOT SET"
+          elif [[ "$CLIENT_ID" == *.apps.googleusercontent.com ]]; then
+            echo "Google client ID: set and looks like a client ID"
+          else
+            echo "::warning::GOOGLE_SERVER_CLIENT_ID does not end in .apps.googleusercontent.com (is it the client secret?)"
+          fi
 
       - uses: actions/upload-artifact@v4
         with:
