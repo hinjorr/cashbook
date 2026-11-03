@@ -6,6 +6,7 @@ import 'backup_screen.dart';
 import 'budget_screen.dart';
 import 'categories_screen.dart';
 import 'import_screen.dart';
+import 'month_closing_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -67,15 +68,10 @@ class MoreScreen extends StatelessWidget {
             onTap: () => _editCurrency(context),
           ),
           ListTile(
-            leading: const Icon(Icons.event_outlined),
-            title: const Text('Month starts on day'),
-            subtitle: const Text('E.g. your salary day; monthly views run from this day'),
-            trailing: DropdownButton<int>(
-              value: s.monthStartDay,
-              underline: const SizedBox(),
-              items: [for (var d = 1; d <= 28; d++) DropdownMenuItem(value: d, child: Text('$d'))],
-              onChanged: (d) => s.setMonthStartDay(d!),
-            ),
+            leading: const Icon(Icons.lock_clock_outlined),
+            title: const Text('Month closing'),
+            subtitle: const Text('Close a month on salary day, reopen or adjust past months'),
+            onTap: () => _open(context, const MonthClosingScreen()),
           ),
           const Divider(),
           const AboutListTile(

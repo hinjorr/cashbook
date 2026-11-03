@@ -8,6 +8,7 @@ import '../logic/period.dart';
 import '../logic/stats.dart';
 import '../widgets/common.dart';
 import 'edit_transaction_screen.dart';
+import 'month_closing_screen.dart';
 import 'search_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
@@ -42,7 +43,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final s = context.read<AppState>();
+    final s = context.watch<AppState>();
     final period = _period;
     return Scaffold(
       appBar: AppBar(
@@ -68,9 +69,25 @@ class _TransactionsScreenState extends State<TransactionsScreen> with SingleTick
           PeriodBar(
             period: period,
             onChanged: (p) => setState(() {
-              _anchor = _tabs.index == 1 ? DateTime(p.start.year, p.start.month, monthStartDay) : p.start;
+              // From the calendar grid, pick the salary month around mid-month.
+              _anchor = _tabs.index == 1 ? DateTime(p.start.year, p.start.month, 15) : p.start;
             }),
           ),
+          if (_tabs.index == 0 && period.contains(DateTime.now()))
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: TextButton.icon(
+                  icon: const Icon(Icons.lock_clock_outlined, size: 18),
+                  label: const Text('Close month'),
+                  onPressed: () async {
+                    final day = await closeMonthFlow(context, period);
+                    if (day != null) setState(() => _anchor = day);
+                  },
+                ),
+              ),
+            ),
           Expanded(
             child: Reloading<List<Txn>>(
               deps: [period],

@@ -24,7 +24,10 @@ class BudgetScreen extends StatefulWidget {
 }
 
 class _BudgetScreenState extends State<BudgetScreen> {
-  Period _period = Period.of(PeriodKind.monthly, DateTime.now());
+  Period _chosen = Period.of(PeriodKind.monthly, DateTime.now());
+
+  /// Worked out again on each build, so closing a month updates it.
+  Period get _period => _chosen.refreshed();
 
   Future<void> _edit(Category c, int? current) async {
     final s = context.read<AppState>();
@@ -57,7 +60,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
       appBar: AppBar(title: const Text('Budgets')),
       body: Column(
         children: [
-          PeriodBar(period: _period, onChanged: (p) => setState(() => _period = p)),
+          PeriodBar(period: _period, onChanged: (p) => setState(() => _chosen = p)),
           Expanded(
             child: Reloading<_BudgetData>(
               deps: [_period],

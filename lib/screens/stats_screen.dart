@@ -32,7 +32,10 @@ class _StatsData {
 
 class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStateMixin {
   late final _tabs = TabController(length: 3, initialIndex: 1, vsync: this);
-  Period _period = Period.of(PeriodKind.monthly, DateTime.now());
+  Period _chosen = Period.of(PeriodKind.monthly, DateTime.now());
+
+  /// Worked out again on each build, so closing a month updates it.
+  Period get _period => _chosen.refreshed();
 
   @override
   void dispose() {
@@ -42,12 +45,12 @@ class _StatsScreenState extends State<StatsScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    final s = context.read<AppState>();
+    final s = context.watch<AppState>();
     return Scaffold(
       appBar: AppBar(title: const Text('Stats')),
       body: Column(
         children: [
-          PeriodBar(period: _period, kinds: _statKinds, onChanged: (p) => setState(() => _period = p)),
+          PeriodBar(period: _period, kinds: _statKinds, onChanged: (p) => setState(() => _chosen = p)),
           Expanded(
             child: Reloading<_StatsData>(
               deps: [_period],

@@ -47,13 +47,15 @@ class AppDatabase {
     final db = await f.openDatabase(
       dbPath,
       options: OpenDatabaseOptions(
-        version: 2,
+        version: 3,
         onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
         onUpgrade: (db, from, _) async {
           // v2: the Investments group replaces the per-account switch.
           if (from < 2) {
             await db.execute("UPDATE accounts SET grp = 'Investments' WHERE is_investment = 1");
           }
+          // v3: manual month closing.
+          if (from < 3) await _createMonthCloses(db);
         },
         onCreate: (db, _) async {
           await _createSchema(db);
@@ -101,7 +103,13 @@ class AppDatabase {
         category_id INTEGER PRIMARY KEY REFERENCES categories(id) ON DELETE CASCADE,
         amount INTEGER NOT NULL
       )''');
+    await _createMonthCloses(db);
   }
+
+  /// Each row is a day on which a month was closed; a new month starts that
+  /// day. Stored as milliseconds since epoch of local midnight.
+  static Future<void> _createMonthCloses(DatabaseExecutor db) =>
+      db.execute('CREATE TABLE IF NOT EXISTS month_closes(day INTEGER PRIMARY KEY)');
 
   static Future<void> _seed(DatabaseExecutor db) async {
     for (final a in _defaultAccounts) {
@@ -265,9 +273,31 @@ class AppDatabase {
     }
   }
 
+  // ---- Month closing ----
+
+  Future<List<DateTime>> monthCloses() async {
+    final rows = await db.query('month_closes', orderBy: 'day');
+    return [for (final r in rows) DateTime.fromMillisecondsSinceEpoch(r['day'] as int)];
+  }
+
+  Future<void> addMonthClose(DateTime day) => db.insert(
+        'month_closes',
+        {'day': DateTime(day.year, day.month, day.day).millisecondsSinceEpoch},
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+
+  Future<void> removeMonthClose(DateTime day) => db.delete(
+        'month_closes',
+        where: 'day = ?',
+        whereArgs: [DateTime(day.year, day.month, day.day).millisecondsSinceEpoch],
+      );
+
   // ---- Backup ----
 
+  /// Tables cleared by [wipe] (e.g. a "replace all" import). Month closing
+  /// dates are kept there, but are part of backups.
   static const _tables = ['accounts', 'categories', 'txns', 'budgets'];
+  static const _backupTables = [..._tables, 'month_closes'];
 
   /// Dumps every table into a JSON-serialisable map.
   Future<Map<String, Object?>> exportData() async {
@@ -276,7 +306,7 @@ class AppDatabase {
       'version': 1,
       'exportedAt': DateTime.now().toIso8601String(),
     };
-    for (final t in _tables) {
+    for (final t in _backupTables) {
       out[t] = await db.query(t);
     }
     return out;
@@ -289,7 +319,7 @@ class AppDatabase {
     }
     await db.transaction((tx) async {
       // Children first, so foreign keys never dangle.
-      for (final t in _tables.reversed) {
+      for (final t in _backupTables.reversed) {
         await tx.delete(t);
       }
       // Parents before subcategories.
@@ -301,8 +331,9 @@ class AppDatabase {
         'categories': cats,
         'txns': (data['txns'] as List? ?? const []),
         'budgets': (data['budgets'] as List? ?? const []),
+        'month_closes': (data['month_closes'] as List? ?? const []),
       };
-      for (final t in _tables) {
+      for (final t in _backupTables) {
         for (final r in rows[t]!) {
           await tx.insert(t, Map<String, Object?>.from(r as Map));
         }

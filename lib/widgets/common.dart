@@ -79,12 +79,19 @@ class PeriodBar extends StatelessWidget {
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(period.label, style: Theme.of(context).textTheme.titleLarge),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(period.label, style: Theme.of(context).textTheme.titleLarge),
+                  if (period.range != null)
+                    Text(period.range!, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            onPressed: period.canStep ? () => onChanged(period.step(1)) : null,
+            onPressed: period.hasNext ? () => onChanged(period.step(1)) : null,
           ),
           const Spacer(),
           if (kinds != null)

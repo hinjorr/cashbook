@@ -99,7 +99,10 @@ class AccountDetailScreen extends StatefulWidget {
 }
 
 class _AccountDetailScreenState extends State<AccountDetailScreen> {
-  Period _period = Period.of(PeriodKind.monthly, DateTime.now());
+  Period _chosen = Period.of(PeriodKind.monthly, DateTime.now());
+
+  /// Worked out again on each build, so closing a month updates it.
+  Period get _period => _chosen.refreshed();
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +123,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
           PeriodBar(
             period: _period,
             kinds: const [PeriodKind.monthly, PeriodKind.yearly, PeriodKind.all],
-            onChanged: (p) => setState(() => _period = p),
+            onChanged: (p) => setState(() => _chosen = p),
           ),
           Expanded(
             child: Reloading<List<Txn>>(

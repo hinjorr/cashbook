@@ -19,11 +19,14 @@ class CategoryDetailScreen extends StatefulWidget {
 }
 
 class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
-  late Period _period = widget.period;
+  late Period _chosen = widget.period;
+
+  /// Worked out again on each build, so closing a month updates it.
+  Period get _period => _chosen.refreshed();
 
   @override
   Widget build(BuildContext context) {
-    final s = context.read<AppState>();
+    final s = context.watch<AppState>();
     final cat = widget.category;
     final ids = cat == null ? null : {cat.id, for (final c in s.subcategories(cat.id!)) c.id};
     bool matches(Txn t) =>
@@ -34,7 +37,7 @@ class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
       appBar: AppBar(title: Text(cat?.name ?? 'Uncategorized')),
       body: Column(
         children: [
-          PeriodBar(period: _period, onChanged: (p) => setState(() => _period = p)),
+          PeriodBar(period: _period, onChanged: (p) => setState(() => _chosen = p)),
           Expanded(
             child: Reloading<List<Txn>>(
               deps: [_period],

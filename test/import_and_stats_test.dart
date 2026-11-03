@@ -142,6 +142,93 @@ void main() {
     await dir.delete(recursive: true);
   });
 
+  group('manual month closing', () {
+    setUp(() => monthCloses = [DateTime(2026, 10, 5), DateTime(2026, 10, 30)]);
+    tearDown(() => monthCloses = const []);
+
+    test('months run between closing dates and can differ in length', () {
+      final oct = Period.of(PeriodKind.monthly, DateTime(2026, 10, 20));
+      expect(oct.start, DateTime(2026, 10, 5));
+      expect(oct.end, DateTime(2026, 10, 30));
+      expect(oct.days, 25);
+      expect(oct.label, 'Oct 2026');
+      expect(oct.range, '5 Oct – 29 Oct · 25 days');
+      expect(oct.isOpen, isFalse);
+      expect(oct.hasNext, isTrue);
+    });
+
+    test('the month after the last close stays open', () {
+      final open = Period.of(PeriodKind.monthly, DateTime(2026, 11, 20));
+      expect(open.start, DateTime(2026, 10, 30));
+      expect(open.isOpen, isTrue);
+      expect(open.hasNext, isFalse);
+      expect(open.label, 'Nov 2026'); // named after where most of it falls
+      expect(open.contains(DateTime(2027, 1, 1)), isTrue);
+      expect(open.step(1), open);
+      expect(open.range, startsWith('Since 30 Oct'));
+    });
+
+    test('stepping walks closed months, then start-day months before them', () {
+      var p = Period.of(PeriodKind.monthly, DateTime(2026, 11, 1));
+      p = p.step(-1);
+      expect(p.start, DateTime(2026, 10, 5));
+      // 1-4 Oct is too short to stand alone, so it joins September.
+      p = p.step(-1);
+      expect(p.start, DateTime(2026, 9, 1));
+      expect(p.end, DateTime(2026, 10, 5));
+      expect(p.label, 'Sep 2026');
+      p = p.step(-1);
+      expect(p.start, DateTime(2026, 8, 1));
+      expect(p.end, DateTime(2026, 9, 1));
+      expect(p.step(2).start, DateTime(2026, 10, 5));
+      expect(Period.of(PeriodKind.monthly, DateTime(2026, 10, 2)).start, DateTime(2026, 9, 1));
+    });
+
+    test('calendar months ignore closing dates', () {
+      final cal = Period.of(PeriodKind.monthly, DateTime(2026, 10, 20), startDay: 1);
+      expect(cal.start, DateTime(2026, 10, 1));
+      expect(cal.end, DateTime(2026, 11, 1));
+      expect(cal.step(1).start, DateTime(2026, 11, 1));
+      expect(cal.range, isNull);
+    });
+
+    test('refreshed picks up a new close', () {
+      final before = Period.of(PeriodKind.monthly, DateTime(2026, 11, 20));
+      monthCloses = [...monthCloses, DateTime(2026, 11, 28)];
+      final after = before.refreshed();
+      expect(after.start, DateTime(2026, 10, 30));
+      expect(after.end, DateTime(2026, 11, 28));
+      expect(after.isOpen, isFalse);
+    });
+
+    test('investment chart weeks for the open month stop at today', () {
+      final today = DateTime.now();
+      monthCloses = [DateTime(today.year, today.month, today.day).subtract(const Duration(days: 10))];
+      final b = bucketsFor(Period.of(PeriodKind.monthly, today));
+      expect(b, hasLength(2));
+      expect(b.last.end.isAfter(today), isTrue);
+    });
+  });
+
+  test('closing dates are stored, survive a replace-all import, and are in backups', () async {
+    final db = await memoryDb();
+    await db.addMonthClose(DateTime(2026, 10, 5, 13, 30));
+    await db.addMonthClose(DateTime(2026, 11, 4));
+    expect(await db.monthCloses(), [DateTime(2026, 10, 5), DateTime(2026, 11, 4)]);
+    await db.removeMonthClose(DateTime(2026, 11, 4));
+    expect(await db.monthCloses(), [DateTime(2026, 10, 5)]);
+
+    await db.wipe();
+    expect(await db.monthCloses(), [DateTime(2026, 10, 5)]);
+
+    final dump = jsonDecode(jsonEncode(await db.exportData())) as Map<String, Object?>;
+    final other = await memoryDb();
+    await other.importData(dump);
+    expect(await other.monthCloses(), [DateTime(2026, 10, 5)]);
+    await other.close();
+    await db.close();
+  });
+
   test('categoryTotals rolls subcategories into parents', () {
     const food = Category(id: 1, name: 'Food', type: TxnType.expense);
     const lunch = Category(id: 2, name: 'Lunch', type: TxnType.expense, parentId: 1);
@@ -170,6 +257,9 @@ void main() {
     expect(p.end, DateTime(2026, 10, 5));
     expect(p.step(1).start, DateTime(2026, 10, 5));
     expect(p.step(-1).start, DateTime(2026, 8, 5));
+    expect(p.label, 'Sep 2026');
+    expect(p.range, '5 Sep – 4 Oct · 30 days');
+    expect(Period.of(PeriodKind.monthly, DateTime(2026, 10, 3), startDay: 1).range, isNull);
     expect(Period.of(PeriodKind.monthly, DateTime(2026, 10, 3), startDay: 1).start, DateTime(2026, 10, 1));
     final weeks = bucketsFor(Period.of(PeriodKind.monthly, DateTime(2026, 10, 5)));
     expect(weeks.first.start, DateTime(2026, 10, 5));

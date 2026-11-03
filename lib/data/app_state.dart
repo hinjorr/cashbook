@@ -37,11 +37,32 @@ class AppState extends ChangeNotifier {
     await changed();
   }
 
+  /// Ends the current month: a new month starts on [day].
+  Future<void> closeMonth(DateTime day) async {
+    await db.addMonthClose(day);
+    await changed();
+  }
+
+  /// Removes a closing date, joining the month that started on [day] onto
+  /// the month before it.
+  Future<void> reopenMonth(DateTime day) async {
+    await db.removeMonthClose(day);
+    await changed();
+  }
+
+  /// Moves a closing date, e.g. when salary came a day later.
+  Future<void> moveMonthClose(DateTime from, DateTime to) async {
+    await db.removeMonthClose(from);
+    await db.addMonthClose(to);
+    await changed();
+  }
+
   String money(int minor, {bool showSign = false}) =>
       formatMoney(minor, symbol: currency, showSign: showSign);
 
   Future<void> load() async {
     period.monthStartDay = monthStartDay;
+    period.monthCloses = await db.monthCloses();
     accounts = await db.accounts();
     categories = await db.categories();
     accountById = {for (final a in accounts) a.id!: a};

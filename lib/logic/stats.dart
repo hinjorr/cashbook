@@ -166,11 +166,15 @@ List<InvestmentBucket> bucketsFor(Period period, {DateTime? firstDate, DateTime?
         out.add(InvestmentBucket(DateFormat('E').format(s), s, DateTime(s.year, s.month, s.day + 1)));
       }
     case PeriodKind.monthly:
+      // The open month runs up to today.
+      final end = period.isOpen
+          ? DateTime(period.lastDay.year, period.lastDay.month, period.lastDay.day + 1)
+          : period.end;
       for (var w = 0;; w++) {
         final s = DateTime(period.start.year, period.start.month, period.start.day + 7 * w);
-        if (!s.isBefore(period.end)) break;
+        if (!s.isBefore(end)) break;
         var e = DateTime(s.year, s.month, s.day + 7);
-        if (e.isAfter(period.end)) e = period.end;
+        if (e.isAfter(end)) e = end;
         out.add(InvestmentBucket('W${w + 1}', s, e));
       }
     case PeriodKind.yearly:
