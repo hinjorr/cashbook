@@ -5,6 +5,7 @@ import 'package:cashbook/data/database.dart';
 import 'package:cashbook/main.dart';
 import 'package:cashbook/services/money_manager_import.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -79,6 +80,38 @@ void main() {
     expect(state.prefs.getString('theme'), 'light');
     // A fresh start reads it back.
     expect(AppState(state.db, state.prefs).themeMode, ThemeMode.light);
+    await tester.runAsync(() => state.db.close());
+  });
+  testWidgets('day headers follow a theme switch made while the app is open', (tester) async {
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    SharedPreferences.setMockInitialValues({});
+    sqfliteFfiInit();
+    late AppState state;
+    await tester.runAsync(() async {
+      final db = await AppDatabase.open(path: inMemoryDatabasePath, factory: databaseFactoryFfiNoIsolate);
+      final bytes = File('test/fixtures/money_manager_export.xlsx').readAsBytesSync();
+      await applyMoneyManagerImport(db, parseMoneyManagerExport(bytes), replaceExisting: true);
+      // Keep the fixture's October entries in the current (open) month.
+      await db.addMonthClose(DateTime(2026, 10, 1));
+      state = AppState(db, await SharedPreferences.getInstance());
+      await state.load();
+    });
+    Future<void> settle() async {
+      for (var i = 0; i < 6; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump(const Duration(milliseconds: 300));
+      }
+    }
+
+    await tester.pumpWidget(CashbookApp(state: state));
+    await settle();
+    Color dayColor() => tester.renderObject<RenderParagraph>(find.text('18')).text.style!.color!;
+    expect(dayColor().computeLuminance(), greaterThan(0.5)); // light text on dark
+
+    await tester.runAsync(() => state.setThemeMode(ThemeMode.light));
+    await settle();
+    expect(dayColor().computeLuminance(), lessThan(0.2)); // dark text on light
     await tester.runAsync(() => state.db.close());
   });
 }

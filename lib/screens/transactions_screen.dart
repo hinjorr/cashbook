@@ -133,7 +133,9 @@ class _DailyList extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 88),
       itemCount: keys.length,
-      itemBuilder: (context, i) {
+      // Use this widget's context, not the list's, so cards rebuild when the
+      // theme changes.
+      itemBuilder: (_, i) {
         final day = keys[i];
         final list = days[day]!;
         final tot = totalsOf(list);
@@ -210,7 +212,8 @@ class _CalendarView extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           itemCount: cells,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, childAspectRatio: 0.72),
-          itemBuilder: (context, i) {
+          // This widget's context, so cells follow theme changes.
+          itemBuilder: (_, i) {
             final d = i - lead + 1;
             if (d < 1 || d > daysInMonth) return const SizedBox();
             final tot = byDay[d]!;
