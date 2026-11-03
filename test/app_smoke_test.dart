@@ -60,4 +60,25 @@ void main() {
 
     await tester.runAsync(() => state.db.close());
   });
+  testWidgets('theme setting overrides the phone and is remembered', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    sqfliteFfiInit();
+    late AppState state;
+    await tester.runAsync(() async {
+      final db = await AppDatabase.open(path: inMemoryDatabasePath, factory: databaseFactoryFfiNoIsolate);
+      state = AppState(db, await SharedPreferences.getInstance());
+      await state.load();
+    });
+    await tester.pumpWidget(CashbookApp(state: state));
+    ThemeMode mode() => tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode!;
+    expect(mode(), ThemeMode.system);
+
+    await tester.runAsync(() => state.setThemeMode(ThemeMode.light));
+    await tester.pump();
+    expect(mode(), ThemeMode.light);
+    expect(state.prefs.getString('theme'), 'light');
+    // A fresh start reads it back.
+    expect(AppState(state.db, state.prefs).themeMode, ThemeMode.light);
+    await tester.runAsync(() => state.db.close());
+  });
 }

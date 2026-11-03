@@ -62,6 +62,20 @@ class MoreScreen extends StatelessWidget {
             onTap: () => _open(context, const BudgetScreen()),
           ),
           ListTile(
+            leading: const Icon(Icons.brightness_6_outlined),
+            title: const Text('Theme'),
+            trailing: DropdownButton<ThemeMode>(
+              value: s.themeMode,
+              underline: const SizedBox(),
+              items: const [
+                DropdownMenuItem(value: ThemeMode.system, child: Text('System')),
+                DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
+                DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
+              ],
+              onChanged: (m) => s.setThemeMode(m!),
+            ),
+          ),
+          ListTile(
             leading: const Icon(Icons.payments_outlined),
             title: const Text('Currency symbol'),
             trailing: Text(s.currency),

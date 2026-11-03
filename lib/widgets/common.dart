@@ -77,16 +77,24 @@ class PeriodBar extends StatelessWidget {
             onPressed: period.canStep ? () => onChanged(period.step(-1)) : null,
           ),
           Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(period.label, style: Theme.of(context).textTheme.titleLarge),
-                  if (period.range != null)
-                    Text(period.range!, style: Theme.of(context).textTheme.bodySmall),
-                ],
-              ),
+            // Takes what it needs, up to most of the row; the gap gets the rest.
+            flex: 6,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(period.label, style: Theme.of(context).textTheme.titleLarge),
+                ),
+                // Only the date line gives way when space is tight.
+                if (period.range != null)
+                  Text(
+                    period.range!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
             ),
           ),
           IconButton(

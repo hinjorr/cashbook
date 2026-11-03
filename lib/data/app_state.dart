@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show ChangeNotifier;
+import 'package:flutter/material.dart' show ChangeNotifier, ThemeMode;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../logic/money.dart';
@@ -21,6 +21,14 @@ class AppState extends ChangeNotifier {
 
   /// Bumped on every change; screens use it as a reload key.
   int revision = 0;
+
+  /// Light, dark, or follow the phone's setting (the default).
+  ThemeMode get themeMode => ThemeMode.values.asNameMap()[prefs.getString('theme')] ?? ThemeMode.system;
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    await prefs.setString('theme', mode.name);
+    notifyListeners();
+  }
 
   String get currency => prefs.getString('currency') ?? 'Rs';
 

@@ -140,12 +140,15 @@ class CashbookApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: state,
-      child: MaterialApp(
-        title: 'Cashbook',
-        debugShowCheckedModeBanner: false,
-        theme: appTheme(Brightness.light),
-        darkTheme: appTheme(Brightness.dark),
-        home: const HomeScreen(),
+      child: Consumer<AppState>(
+        builder: (context, s, _) => MaterialApp(
+          title: 'Cashbook',
+          debugShowCheckedModeBanner: false,
+          theme: appTheme(Brightness.light),
+          darkTheme: appTheme(Brightness.dark),
+          themeMode: s.themeMode,
+          home: const HomeScreen(),
+        ),
       ),
     );
   }
